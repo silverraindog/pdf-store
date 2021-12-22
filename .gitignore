@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+#user
+bin/
+lib/
+pyvenv.cfg
+pdf-store.komodoproject
