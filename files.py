@@ -12,35 +12,22 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog as fd
 from tkinter.messagebox import showinfo
-
-
-
-
+import config
 
 class FileImport:
-
-    def select_files():
-         filetypes = (
-         ('text files', '*.txt'),
-         ('All files', '*.*')
+    def select_files(self):
+        filetypes = (
+            ("PDF files", "*.pdf"),
+            ("All files", "*.*")
         )
 
         filenames = fd.askopenfilenames(
-            title='Open files',
-            initialdir='/',
+            title="Open PDF files",
+            initialdir=config.file_path,
             filetypes=filetypes)
 
-        showinfo(
-            title='Selected Files',
-            message=filenames
-        )
-
-
-    # open button
-    open_button = ttk.Button(
-        root,
-        text='Open Files',
-        command=select_files
-    )
-
-    open_button.pack(expand=True)
+        if filenames:
+            showinfo(
+                title="Selected Files",
+                message=f"Selected {len(filenames)} file(s)"
+            )

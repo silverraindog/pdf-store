@@ -49,12 +49,11 @@ class Db(object):
     @logger.catch
     @snoop
     def insert(self, statements, sql):
-        Logger()
         self.cursor.execute(statements, sql)
 
     @logger.catch
     @snoop
-    def retreive(self, statements):
+    def retrieve(self, statements):
         self.cursor.execute(statements)
         records = self.cursor.fetchall()
         return records

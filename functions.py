@@ -34,20 +34,47 @@ class InsertPdf:
     @logger.catch
     @snoop
     def insertbooks(self):
-        for self.book in self.files:
-            statements = "INSERT INTO ebooks (books) VALUES ('{}')" .format(
-                self.book)
-            db.execute(statements)
+        for book in self.files:
+            statements = "INSERT INTO ebooks (title, author, path, size) VALUES (?, ?, ?, ?)"
+            info = self.get_pdf_info(book)
+            if info:
+                db.execute(statements, (info['title'], info['author'], info['path'], info['size']))
 
     @logger.catch
     @snoop
     def createtable(self):
-        statements = "CREATE TABLE  IF NOT EXISTS ebooks (books TEXT)"
+        statements = """CREATE TABLE IF NOT EXISTS ebooks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            author TEXT,
+            path TEXT,
+            size INTEGER,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )"""
         db.execute(statements)
 
     @logger.catch
     @snoop
     def selectbooks(self):
-        statements = """SELECT * from ebooks"""
-        books = db.retreive(statements)
+        statements = "SELECT title, author, path, size FROM ebooks ORDER BY created_at DESC"
+        books = db.retrieve(statements)
         return books
+
+    @logger.catch
+    @snoop
+    def get_pdf_info(self, filepath):
+        """Get PDF metadata from file."""
+        import fitz
+        try:
+            pdf = fitz.open(filepath)
+            info = {
+                'title': pdf[0].title,
+                'author': pdf[0].author,
+                'size': os.path.getsize(filepath),
+                'pages': len(pdf)
+            }
+            pdf.close()
+            return info
+        except Exception as e:
+            logger.error(f"Error reading PDF: {e}")
+            return None

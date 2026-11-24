@@ -40,5 +40,5 @@ class MainWindow:
     @snoop
     def listbooks(self):
         for book in self.books:
-            self.tree.insert('', 'end', value=book)
+            self.tree.insert('', 'end', values=(book['title'], book['author'], book['path']))
         self.tree.pack(side=tkinter.TOP, fill=tkinter.X)

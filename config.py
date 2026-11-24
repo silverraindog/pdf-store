@@ -8,5 +8,10 @@ __maintainer__ = "Angus Robinson"
 __email__ = "angus@fairhaven.za.net"
 __status__ = "Beta"
 
-file_path = "/home/sargus/books/"
-database = "books.db"
+# Default configuration
+DEFAULT_FILE_PATH = "/home/sargus/books/"
+DEFAULT_DATABASE = "books.db"
+
+# Configuration namespace
+file_path = DEFAULT_FILE_PATH
+database = DEFAULT_DATABASE
