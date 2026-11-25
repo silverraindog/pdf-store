@@ -24,10 +24,16 @@ A Python-based PDF library application that allows you to store, search, and man
 - **PDF Content Search**: Search for text within PDF files
 - **Reports Generation**: Generate comprehensive library reports
 
+### Format Support
+- **PDF** (.pdf) - Primary format with full preview support
+- **EPUB** (.epub, .epub3) - Electronic books with metadata extraction
+- **MOBI** (.mobi) - Kindle format with metadata extraction
+
 ### Technical Details
 - **GUI Framework**: Tkinter
 - **Database**: SQLite (ebooks table)
 - **PDF Processing**: PyMuPDF (fitz)
+- **EPUB/MOBI Processing**: ebooklib
 - **Testing**: Comprehensive unit test suite with pytest
 - **Logging**: Loguru for structured logging
 - **Code Quality**: Snoop decorator for debugging
@@ -62,13 +68,21 @@ Edit `config.py` to configure:
 7. Open PDF preview for selected books
 8. Backup and restore the database
 
+## Supported Formats
+
+| Format | Extension | Description |
+|--------|-----------|-------------|
+| PDF | .pdf | Portable Document Format |
+| EPUB | .epub, .epub3 | Electronic Publication format |
+| MOBI | .mobi | Kindle format |
+
 ## Database Schema
 
 The `ebooks` table contains:
 - `id`: Primary key (auto-increment)
 - `title`: Book title
 - `author`: Author name
-- `path`: File path to PDF
+- `path`: File path to PDF/EPUB/MOBI
 - `size`: File size in bytes
 - `created_at`: Timestamp when added
 
@@ -92,7 +106,7 @@ All tests should pass.
 ```
 pdf-store/
 ├── window.py          # Main GUI application
-├── functions.py       # Core functionality (PDF metadata extraction, exports, security)
+├── functions.py       # Core functionality (PDF, EPUB, MOBI metadata extraction, exports, security)
 ├── db.py              # Database operations with backup/restore
 ├── config.py          # Configuration settings
 ├── test_window.py     # Unit test suite

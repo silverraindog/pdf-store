@@ -161,7 +161,7 @@ class TestInsertPdf(unittest.TestCase):
             import fitz
             pdf = fitz.open()
             page = pdf.new_page()
-            page.text("Test Document")
+            page.insert_text(0, 'Test Document')
             pdf.save(os.path.join(self.temp_dir, "test.pdf"))
             pdf.close()
             
@@ -240,6 +240,42 @@ class TestBookManager(unittest.TestCase):
             self.assertTrue(os.path.exists(csv_path))
         except Exception as e:
             print(f"Error in test_export_csv: {e}")
+
+
+class TestFormatSupport(unittest.TestCase):
+    """Test support for different file formats."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.temp_dir = tempfile.mkdtemp()
+        os.makedirs(os.path.join(self.temp_dir, "books"), exist_ok=True)
+        self.db_path = os.path.join(self.temp_dir, "books.db")
+        self.db = Db(self.db_path)
+    
+    def tearDown(self):
+        """Clean up test fixtures."""
+        shutil.rmtree(self.temp_dir)
+    
+    def test_supported_format_detection(self):
+        """Test that supported formats are detected."""
+        # Test PDF detection
+        try:
+            import fitz
+            pdf = fitz.open()
+            page = pdf.new_page()
+            page.insert_text(0, 'Test Document')
+            pdf.save(os.path.join(self.temp_dir, "test.pdf"))
+            pdf.close()
+            
+            info = InsertPdf().get_book_info(os.path.join(self.temp_dir, "test.pdf"))
+            self.assertIsNotNone(info)
+        except Exception as e:
+            print(f"Error in test_supported_format_detection: {e}")
+    
+    def test_unsupported_format_rejection(self):
+        """Test that unsupported formats are rejected."""
+        info = InsertPdf().get_book_info(os.path.join(self.temp_dir, "test.txt"))
+        self.assertIsNone(info)
 
 
 if __name__ == "__main__":

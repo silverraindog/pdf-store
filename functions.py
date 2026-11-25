@@ -23,7 +23,7 @@ import hashlib
 import base64
 import sqlite3
 from datetime import datetime
-
+from ebooklib import epub
 
 class InsertPdf:
     """Class for inserting PDF files into the library."""
@@ -39,7 +39,7 @@ class InsertPdf:
     @logger.catch
     @snoop
     def insert_books(self):
-        """Insert all PDF books into the database."""
+        """Insert all PDF books into the library."""
         if not os.path.exists(self.filepath):
             logger.warning(f"Directory {self.filepath} does not exist")
             return
@@ -47,11 +47,11 @@ class InsertPdf:
         self.files = os.listdir(self.filepath)
         
         for book in self.files:
-            if book.endswith('.pdf'):
+            if self.is_supported_format(book):
                 statements = "INSERT INTO ebooks (title, author, path, size) VALUES (?, ?, ?, ?)"
-                info = self.get_pdf_info(book)
+                info = self.get_book_info(book)
                 if info:
-                    db.execute(statements, (info['title'], info['author'], info['path'], info['size']))
+                    self.db.execute(statements, (info['title'], info['author'], info['path'], info['size']))
     
     @logger.catch
     @snoop
@@ -65,7 +65,7 @@ class InsertPdf:
             size INTEGER,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )"""
-        db.execute(statements)
+        self.db.execute(statements)
     
     @logger.catch
     @snoop
@@ -77,12 +77,26 @@ class InsertPdf:
     
     @logger.catch
     @snoop
+    def get_book_info(self, filepath):
+        """Get book metadata from file using appropriate library."""
+        if filepath.endswith('.pdf'):
+            return self.get_pdf_info(filepath)
+        elif filepath.endswith('.epub') or filepath.endswith('.epub3'):
+            return self.get_epub_info(filepath)
+        elif filepath.endswith('.mobi'):
+            return self.get_mobi_info(filepath)
+        else:
+            logger.warning(f"Unsupported format: {filepath}")
+            return None
+    
+    @logger.catch
+    @snoop
     def get_pdf_info(self, filepath):
         """Get PDF metadata from file using PyMuPDF."""
         try:
             pdf = fitz.open(filepath)
             info = {
-                'title': pdf[0].title,
+                'title': pdf[0].title['title'],
                 'author': pdf[0].author,
                 'size': os.path.getsize(filepath),
                 'pages': len(pdf)
@@ -92,6 +106,45 @@ class InsertPdf:
         except Exception as e:
             logger.error(f"Error reading PDF: {e}")
             return None
+    
+    @logger.catch
+    @snoop
+    def get_epub_info(self, filepath):
+        """Get EPUB metadata from file using ebooklib."""
+        try:
+            book = epub.read_epub(filepath)
+            info = {
+                'title': book.get_metadata('DC:title')[0]['#text'] if book.get_metadata('DC:title') else "Unknown",
+                'author': ', '.join(book.get_metadata('DC:author') or []),
+                'size': os.path.getsize(filepath),
+                'pages': len(book.get_pages()) if hasattr(book, 'get_pages') else 0
+            }
+            return info
+        except Exception as e:
+            logger.error(f"Error reading EPUB: {e}")
+            return None
+    
+    @logger.catch
+    @snoop
+    def get_mobi_info(self, filepath):
+        """Get MOBI metadata from file using ebooklib."""
+        try:
+            book = epub.read_epub(filepath)
+            info = {
+                'title': book.get_metadata('DC:title')[0]['#text'] if book.get_metadata('DC:title') else "Unknown",
+                'author': ', '.join(book.get_metadata('DC:author') or []),
+                'size': os.path.getsize(filepath),
+                'pages': len(book.get_pages()) if hasattr(book, 'get_pages') else 0
+            }
+            return info
+        except Exception as e:
+            logger.error(f"Error reading MOBI: {e}")
+            return None
+    
+    @snoop
+    def is_supported_format(self, filepath):
+        """Check if file is a supported format."""
+        return filepath.endswith('.pdf') or filepath.endswith('.epub') or filepath.endswith('.epub3') or filepath.endswith('.mobi')
 
 
 class PdfPreview:
@@ -208,7 +261,7 @@ class BookManager:
     @snoop
     def delete_book(self, book_id):
         """Delete a book from the database."""
-        db.execute("DELETE FROM ebooks WHERE id=?", (book_id,))
+        self.db.execute("DELETE FROM ebooks WHERE id=?", (book_id,))
         self.books = self.select_books()
         return self.books
     
@@ -222,14 +275,14 @@ class BookManager:
     
     @logger.catch
     @snoop
-    def add_pdf(self, filepaths):
-        """Add new PDF files to the library."""
+    def add_book(self, filepaths):
+        """Add new books to the library (PDF, EPUB, MOBI)."""
         added_count = 0
         
         for filepath in filepaths:
-            info = InsertPdf().get_pdf_info(filepath)
+            info = InsertPdf().get_book_info(filepath)
             if info:
-                db.execute("INSERT INTO ebooks (title, author, path, size) VALUES (?, ?, ?, ?)",
+                self.db.execute("INSERT INTO ebooks (title, author, path, size) VALUES (?, ?, ?, ?)",
                           (info['title'], info['author'], info['path'], info['size']))
                 added_count += 1
         
@@ -330,7 +383,7 @@ class MainWindow:
     @snoop
     def delete_book(self, book_id):
         """Delete a book from the database."""
-        db.execute("DELETE FROM ebooks WHERE id=?", (book_id,))
+        self.db.execute("DELETE FROM ebooks WHERE id=?", (book_id,))
         self.books = self.select_books()
         self.list_books()
     
@@ -364,9 +417,9 @@ class MainWindow:
                 return
             
             for filepath in self.files:
-                info = InsertPdf().get_pdf_info(filepath)
+                info = InsertPdf().get_book_info(filepath)
                 if info:
-                    db.execute("INSERT INTO ebooks (title, author, path, size) VALUES (?, ?, ?, ?)",
+                    self.db.execute("INSERT INTO ebooks (title, author, path, size) VALUES (?, ?, ?, ?)",
                               (info['title'], info['author'], info['path'], info['size']))
                     self.books = self.select_books()
                     self.list_books()
