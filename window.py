@@ -12,7 +12,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog as fd
 from tkinter.messagebox import showinfo, askyesno
-from functions import InsertPdf, PdfPreview
+from functions import InsertPdf, PdfPreview, BookManager
 from db import Db
 import config
 import csv
@@ -180,7 +180,7 @@ class MainWindow:
             showinfo("Success", f"Exported {len(self.books)} books to {filepath}")
         except Exception as e:
             logger.error(f"Error exporting CSV: {e}")
-            showerror("Error", f"Failed to export CSV: {e}")
+            showerror("Error", f"Failed to export PDFs: {e}")
     
     @logger.catch
     @snoop
@@ -197,7 +197,7 @@ class MainWindow:
     @logger.catch
     @snoop
     def open_preview(self, event):
-        """Open a preview window for the selected book."""
+        """Open preview window for the selected book."""
         selection = self.tree.selection()
         if not selection:
             return

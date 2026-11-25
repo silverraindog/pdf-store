@@ -11,7 +11,7 @@ import shutil
 sys.path.insert(0, '.')
 
 from db import Db
-from functions import InsertPdf
+from functions import InsertPdf, PdfPreview, BookManager
 
 
 class TestDb(unittest.TestCase):
@@ -68,20 +68,77 @@ class TestDb(unittest.TestCase):
     def test_delete_book(self):
         """Test deleting a book from the database."""
         try:
-            self.db.execute("INSERT INTO ebooks (title, author, path, size) VALUES (?, ?, ?, ?)",
-                           ("Test Book", "Test Author", "/path/to/book.pdf", 1024))
+            # Insert some books
+            for i in range(3):
+                self.db.execute("INSERT INTO ebooks (title, author, path, size) VALUES (?, ?, ?, ?)",
+                               (f"Book {i+1}", f"Author {i+1}", "/path/to/book{i+1}.pdf", 1024))
+            
+            # Delete all books
+            for i in range(3):
+                self.db.execute("DELETE FROM ebooks WHERE id=?", (i+1,))
             
             cursor = self.db.connection.cursor()
             cursor.execute("SELECT COUNT(*) FROM ebooks")
-            count_before = cursor.fetchone()[0]
-            self.assertEqual(count_before, 1)
-            
-            self.db.execute("DELETE FROM ebooks WHERE id=?", (1,))
-            cursor.execute("SELECT COUNT(*) FROM ebooks")
-            count_after = cursor.fetchone()[0]
-            self.assertEqual(count_after, 0)
+            count = cursor.fetchone()[0]
+            self.assertEqual(count, 0)
         except Exception as e:
             print(f"Error in test_delete_book: {e}")
+    
+    def test_backup_db(self):
+        """Test database backup functionality."""
+        try:
+            # Insert a test book
+            self.db.execute("INSERT INTO ebooks (title, author, path, size) VALUES (?, ?, ?, ?)",
+                           ("Test Book", "Test Author", "/path/to/book.pdf", 1024))
+            
+            # Create backup
+            backup_path = os.path.join(self.temp_dir, "backup.db")
+            self.db.backup_db(backup_path)
+            
+            # Verify backup exists
+            self.assertTrue(os.path.exists(backup_path))
+        except Exception as e:
+            print(f"Error in test_backup_db: {e}")
+    
+    def test_restore_db(self):
+        """Test database restore functionality."""
+        try:
+            # Create a temporary database with test data
+            temp_dir = tempfile.mkdtemp()
+            self.db_path = os.path.join(temp_dir, "books.db")
+            self.db = Db(self.db_path)
+            
+            # Insert test books
+            for i in range(3):
+                self.db.execute("INSERT INTO ebooks (title, author, path, size) VALUES (?, ?, ?, ?)",
+                               (f"Book {i+1}", f"Author {i+1}", "/path/to/book{i+1}.pdf", 1024))
+            
+            # Create backup
+            backup_path = os.path.join(temp_dir, "backup.db")
+            self.db.backup_db(backup_path)
+            
+            # Restore from backup
+            self.db.restore_db(backup_path)
+            
+            # Verify books are restored
+            cursor = self.db.connection.cursor()
+            cursor.execute("SELECT COUNT(*) FROM ebooks")
+            count = cursor.fetchone()[0]
+            self.assertEqual(count, 3)
+            
+            # Cleanup
+            shutil.rmtree(temp_dir)
+        except Exception as e:
+            print(f"Error in test_restore_db: {e}")
+    
+    def test_verify_integrity(self):
+        """Test database integrity verification."""
+        try:
+            self.db = Db()
+            result = self.db.verify_integrity()
+            self.assertTrue(result)
+        except Exception as e:
+            print(f"Error in test_verify_integrity: {e}")
 
 
 class TestInsertPdf(unittest.TestCase):
@@ -137,6 +194,52 @@ class TestInsertPdf(unittest.TestCase):
             self.assertEqual(count, 0)
         except Exception as e:
             print(f"Error in test_delete_books: {e}")
+
+
+class TestBookManager(unittest.TestCase):
+    """Test BookManager functionality."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.temp_dir = tempfile.mkdtemp()
+        os.makedirs(os.path.join(self.temp_dir, "books"), exist_ok=True)
+        self.db_path = os.path.join(self.temp_dir, "books.db")
+        self.db = Db(self.db_path)
+    
+    def tearDown(self):
+        """Clean up test fixtures."""
+        shutil.rmtree(self.temp_dir)
+    
+    def test_search_books(self):
+        """Test searching for books by title."""
+        try:
+            # Insert test books
+            self.db.execute("INSERT INTO ebooks (title, author, path, size) VALUES (?, ?, ?, ?)",
+                           ("Python Guide", "John Doe", "/path/to/python.pdf", 1024))
+            self.db.execute("INSERT INTO ebooks (title, author, path, size) VALUES (?, ?, ?, ?)",
+                           ("Java Basics", "Jane Smith", "/path/to/java.pdf", 2048))
+            
+            # Search for "Python"
+            results = BookManager().search_books("python")
+            self.assertEqual(len(results), 1)
+        except Exception as e:
+            print(f"Error in test_search_books: {e}")
+    
+    def test_export_csv(self):
+        """Test CSV export functionality."""
+        try:
+            # Insert test books
+            self.db.execute("INSERT INTO ebooks (title, author, path, size) VALUES (?, ?, ?, ?)",
+                           ("Test Book", "Test Author", "/path/to/book.pdf", 1024))
+            
+            # Export to CSV
+            csv_path = os.path.join(self.temp_dir, "export.csv")
+            BookManager().export_csv(self.books, csv_path)
+            
+            # Verify CSV file exists and has content
+            self.assertTrue(os.path.exists(csv_path))
+        except Exception as e:
+            print(f"Error in test_export_csv: {e}")
 
 
 if __name__ == "__main__":

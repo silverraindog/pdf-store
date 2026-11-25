@@ -14,24 +14,19 @@ import snoop
 
 
 class Db(object):
-    @logger.catch
-    @snoop
     def __init__(self, database='books.db'):
         self.database = database
         self.connection = None
         self.cursor = None
         self.connect()
-
-    @logger.catch
+    
     @snoop
     def connect(self):
         """Connect to the SQLite3 database."""
         self.connection = sqlite3.connect(self.database)
         self.cursor = self.connection.cursor()
-        # Create tables if they don't exist
         self.create_tables()
-
-    @logger.catch
+    
     @snoop
     def close(self):
         """Close the SQLite database."""
@@ -40,8 +35,7 @@ class Db(object):
             self.connection.close()
             self.connection = None
             self.cursor = None
-
-    @logger.catch
+    
     @snoop
     def create_tables(self):
         """Create ebooks table if it doesn't exist."""
@@ -54,8 +48,7 @@ class Db(object):
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )"""
         self.cursor.execute(statements)
-
-    @logger.catch
+    
     @snoop
     def execute(self, statements):
         """Execute a SQL statement."""
@@ -64,17 +57,63 @@ class Db(object):
         except sqlite3.Error as error:
             logger.error(f"Failed to execute statement: {error}")
             raise
-
-    @logger.catch
+    
     @snoop
     def insert(self, statements, sql):
         """Insert data into the database."""
         self.cursor.execute(statements, sql)
-
-    @logger.catch
+    
     @snoop
     def retrieve(self, statements):
         """Retrieve data from the database."""
         self.cursor.execute(statements)
         records = self.cursor.fetchall()
         return records
+    
+    @snoop
+    def backup_db(self, backup_path):
+        """Backup the database to specified location."""
+        import shutil
+        try:
+            shutil.copy2(self.database, backup_path)
+            logger.info(f"Database backed up to {backup_path}")
+        except Exception as e:
+            logger.error(f"Failed to backup database: {e}")
+    
+    @snoop
+    def restore_db(self, restore_path):
+        """Restore the database from specified location."""
+        import sqlite3
+        
+        try:
+            # Read the backup file
+            with open(restore_path, 'rb') as f:
+                backup_data = f.read()
+            
+            # Create a new connection and execute the backup
+            self.connection = sqlite3.connect(self.database)
+            self.cursor = self.connection.cursor()
+            
+            # Execute the backup data
+            self.cursor.executescript(backup_data.decode('utf-8'))
+            
+            logger.info(f"Database restored from {restore_path}")
+        except Exception as e:
+            logger.error(f"Failed to restore database: {e}")
+            raise
+    
+    @snoop
+    def verify_integrity(self):
+        """Verify database integrity."""
+        try:
+            self.cursor.execute("PRAGMA integrity_check")
+            result = self.cursor.fetchone()[0]
+            if result == "ok":
+                logger.info("Database integrity check passed")
+                return True
+            else:
+                logger.warning(f"Database integrity check failed: {result}")
+                return False
+        except Exception as e:
+            logger.error(f"Failed to verify database integrity: {e}")
+            return False

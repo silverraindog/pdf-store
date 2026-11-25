@@ -43,6 +43,9 @@ pip install -r requirements.txt
 Edit `config.py` to configure:
 - `file_path`: Directory where PDF files are stored
 - `database`: Path to the SQLite database
+- `MAX_FILE_SIZE_MB`: Maximum file size in MB (default: 100)
+- `DEFAULT_EXPORT_FORMAT`: Default export format (csv, json, xml)
+- `LOG_LEVEL`: Logging level (INFO, DEBUG, WARNING, ERROR)
 
 ## Usage
 
@@ -58,19 +61,6 @@ Edit `config.py` to configure:
 6. View statistics in the Statistics panel
 7. Open PDF preview for selected books
 8. Backup and restore the database
-
-## Project Structure
-
-```
-pdf-store/
-├── window.py          # Main GUI application
-├── functions.py       # Core functionality (PDF metadata extraction, exports, security)
-├── db.py              # Database operations
-├── config.py          # Configuration settings
-├── test_window.py     # Unit test suite
-├── preview_window.py  # PDF preview window
-└── README.md          # This file
-```
 
 ## Database Schema
 
@@ -96,6 +86,19 @@ All tests should pass.
 - Path traversal protection
 - File validation before operations
 - Database backup and restore functionality
+
+## Project Structure
+
+```
+pdf-store/
+├── window.py          # Main GUI application
+├── functions.py       # Core functionality (PDF metadata extraction, exports, security)
+├── db.py              # Database operations with backup/restore
+├── config.py          # Configuration settings
+├── test_window.py     # Unit test suite
+├── preview_window.py  # PDF preview window
+└── README.md          # This file
+```
 
 ## License
 

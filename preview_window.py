@@ -80,10 +80,13 @@ class PreviewWindow:
                 # Get first page
                 page = pdf[0]
                 
-                # Create a simple preview by showing page info
+                # Extract text from first page
+                text = page.get_text()
+                
                 self.status_message.config(text=f"Title: {page.title}")
                 self.status_message.config(text=f"Author: {page.author}")
                 self.status_message.config(text=f"Pages: {len(pdf)}")
+                self.status_message.config(text=f"First 500 chars:\n{text[:500]}")
                 
                 # Show preview window
                 self.preview_window.mainloop()
