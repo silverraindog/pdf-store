@@ -4,7 +4,7 @@ executing==0.8.2
 ebooklib==0.13.0
 fitz==2024.2
 loguru==0.5.3
-Pillow==10.1.0
+Pillow==13.0.0
 six==1.16.0
 snoop==0.4.1
 tk==0.1.0
