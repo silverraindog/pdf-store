@@ -14,35 +14,41 @@ import config
 from loguru import logger
 import snoop
 from db import Db
-
-db = Db()
+import fitz
 
 
 class InsertPdf:
-    @logger.catch
-    @snoop
+    """Class for inserting PDF files into the library."""
+    
     def __init__(self):
         self.filepath = config.file_path
-        self.book = []
+        self.book = None
         self.files = []
+        self.insert_books()
+        self.create_table()
+        self.select_books()
+    
+    @logger.catch
+    @snoop
+    def insert_books(self):
+        """Insert all PDF books into the database."""
+        if not os.path.exists(self.filepath):
+            logger.warning(f"Directory {self.filepath} does not exist")
+            return
+        
         self.files = os.listdir(self.filepath)
-        self.insertbooks()
-        self.createtable()
-        self.selectbooks()
-        self.log = Logger()
-
-    @logger.catch
-    @snoop
-    def insertbooks(self):
+        
         for book in self.files:
-            statements = "INSERT INTO ebooks (title, author, path, size) VALUES (?, ?, ?, ?)"
-            info = self.get_pdf_info(book)
-            if info:
-                db.execute(statements, (info['title'], info['author'], info['path'], info['size']))
-
+            if book.endswith('.pdf'):
+                statements = "INSERT INTO ebooks (title, author, path, size) VALUES (?, ?, ?, ?)"
+                info = self.get_pdf_info(book)
+                if info:
+                    db.execute(statements, (info['title'], info['author'], info['path'], info['size']))
+    
     @logger.catch
     @snoop
-    def createtable(self):
+    def create_table(self):
+        """Create ebooks table if it doesn't exist."""
         statements = """CREATE TABLE IF NOT EXISTS ebooks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,
@@ -52,19 +58,19 @@ class InsertPdf:
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )"""
         db.execute(statements)
-
+    
     @logger.catch
     @snoop
-    def selectbooks(self):
+    def select_books(self):
+        """Retrieve all books from the database."""
         statements = "SELECT title, author, path, size FROM ebooks ORDER BY created_at DESC"
         books = db.retrieve(statements)
         return books
-
+    
     @logger.catch
     @snoop
     def get_pdf_info(self, filepath):
-        """Get PDF metadata from file."""
-        import fitz
+        """Get PDF metadata from file using PyMuPDF."""
         try:
             pdf = fitz.open(filepath)
             info = {
@@ -78,3 +84,24 @@ class InsertPdf:
         except Exception as e:
             logger.error(f"Error reading PDF: {e}")
             return None
+
+
+class PdfPreview:
+    """Class for displaying PDF preview."""
+    
+    @staticmethod
+    def show_preview(filepath):
+        """Show a preview of the PDF file."""
+        try:
+            pdf = fitz.open(filepath)
+            if len(pdf) > 0:
+                page = pdf[0]
+                # For now, just show info about the PDF
+                logger.info(f"Previewing {filepath}")
+                print(f"Title: {page.title}")
+                print(f"Author: {page.author}")
+                print(f"Pages: {len(pdf)}")
+            else:
+                print("No pages found in PDF")
+        except Exception as e:
+            logger.error(f"Error showing preview: {e}")
