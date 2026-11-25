@@ -12,6 +12,6 @@ __status__ = "Beta"
 DEFAULT_FILE_PATH = "/home/sargus/books/"
 DEFAULT_DATABASE = "books.db"
 
-# Configuration namespace
+# Module-level variables for easy access
 file_path = DEFAULT_FILE_PATH
 database = DEFAULT_DATABASE
