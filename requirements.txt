@@ -1,11 +1,10 @@
-asttokens==2.0.5
+asttokens
 cheap-repr==0.5.1
 executing==0.8.2
-ebooklib==0.13.0
-fitz==2024.2
+ebooklib
+fitz
 loguru==0.5.3
 Pillow==10.1.0
 six==1.16.0
 snoop==0.4.1
 tk==0.1.0
-ebooklib==0.13.0

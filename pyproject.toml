@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pdf-store"
+version = "0.1.0"
+description = ""
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "asttokens",
+    "cheap-repr",
+    "executing",
+    "ebooklib",
+    "pymupdf",
+    "loguru",
+    "Pillow",
+    "six",
+    "snoop",
+    "tk",
+]
+
+[project.optional-dependencies]
+dev = []
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["*"]
