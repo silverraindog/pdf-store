@@ -95,9 +95,7 @@ class MainWindow:
         for book in self.books:
             self.tree.insert('', 'end', values=(book['title'], book['author'], book['path']))
     
-    @logger.catch
-    @snoop
-    def delete_book(self, book_id):
+
         """Delete a book from the database."""
         db.execute("DELETE FROM ebooks WHERE id=?", (book_id,))
         self.books = self.select_books()
