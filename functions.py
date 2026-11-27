@@ -32,6 +32,7 @@ class InsertPdf:
         self.filepath = config.file_path
         self.book = None
         self.files = []
+        self.db = Db()
         self.insert_books()
         self.create_table()
         self.select_books()
@@ -72,7 +73,7 @@ class InsertPdf:
     def select_books(self):
         """Retrieve all books from the database."""
         statements = "SELECT title, author, path, size FROM ebooks ORDER BY created_at DESC"
-        books = db.retrieve(statements)
+        books = self.db.retrieve(statements)
         return books
     
     @logger.catch
@@ -95,9 +96,12 @@ class InsertPdf:
         """Get PDF metadata from file using PyMuPDF."""
         try:
             pdf = fitz.open(filepath)
+            # Get document metadata - title is at the document level, not page level
+            doc_title = pdf.title or "Unknown"
+            doc_author = pdf.author or ""
             info = {
-                'title': pdf[0].title['title'],
-                'author': pdf[0].author,
+                'title': doc_title,
+                'author': doc_author,
                 'size': os.path.getsize(filepath),
                 'pages': len(pdf)
             }

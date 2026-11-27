@@ -50,10 +50,13 @@ class Db(object):
         self.cursor.execute(statements)
     
     @snoop
-    def execute(self, statements):
+    def execute(self, statements, params=None):
         """Execute a SQL statement."""
         try:
-            self.cursor.execute(statements)
+            if params is not None:
+                self.cursor.execute(statements, params)
+            else:
+                self.cursor.execute(statements)
         except sqlite3.Error as error:
             logger.error(f"Failed to execute statement: {error}")
             raise
